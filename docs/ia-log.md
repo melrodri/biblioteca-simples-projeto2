@@ -35,7 +35,7 @@ Não foi registrado aceite final do grupo para o conteúdo gerado. Nenhuma rejei
 
 Ainda falta revisar a clareza das histórias, validar os critérios propostos e conferir se cada integrante consegue explicar o escopo. Não foram realizados testes da aplicação, deploys, convites ao professor ou envios ao Moodle.
 
-## Revisão obrigatória pendente no GitHub Copilot
+## Revisão obrigatória no GitHub Copilot (realizada na Entrada 02)
 
 O enunciado exige GitHub Copilot em todas as etapas. Esta geração no Codex, por si só, não comprova esse requisito. O grupo deve realizar e registrar uma revisão real com Copilot antes de marcar a pendência como concluída.
 
@@ -45,3 +45,34 @@ Prompt sugerido, para enviar ao Copilot com `specs/spec.md` e o enunciado como c
 
 Depois da revisão, acrescentar uma entrada com data, ferramenta, prompt efetivamente usado, sugestões reais, o que o grupo aceitou/rejeitou/corrigiu e os motivos. Não preencher essa entrada antecipadamente nem atribuir ao Copilot os arquivos já gerados aqui.
 
+
+## Entrada 02 — Revisão da especificação com GitHub Copilot
+
+**Data:** 15/10/2026
+**Ferramenta:** GitHub Copilot Chat (github.com/copilot), modo Ask, modelo Auto.
+
+O envio ao repositório, a execução desta revisão no Copilot e a redação desta entrada foram feitos com ajuda do Claude (assistente da Anthropic), que também removeu do README um link para um arquivo não incluído.
+
+### Prompt utilizado
+
+Foi enviado o link de `specs/spec.md` no repositório, um resumo do enunciado (RF-01 a RF-05, RNF-01 a RNF-05 e restrições do Learner Lab) e o prompt sugerido na Entrada 01:
+
+> Revise esta especificação da Aula 1 para uma biblioteca simples. Confira seis histórias com critérios testáveis, o mapeamento RF-01 a RF-05 e as restrições do Learner Lab. Preserve somente autores, livros, capas, metadados e relatório. Aponte inconsistências e sugira correções simples. Não gere código, arquitetura ou recursos AWS. Diferencie requisitos do enunciado de propostas que o grupo precisa aprovar.
+
+### O que o Copilot sugeriu
+
+- Reescrever as seis histórias no formato Dado/Quando/Então, com rotas de API e códigos HTTP (201, 204, 404).
+- Personas diferentes: estudante/usuário final, administrador/bibliotecário e desenvolvedor.
+- Campos extras: bio do autor; sinopse, ISBN e páginas do livro; largura/altura e flag `processed` da capa.
+- Lambda do RF-03 gerando miniatura (thumbnail) além de gravar metadados.
+- Relatório com média de páginas por autor e filtro por ano.
+- Listar decisões pendentes: 1:N ou N:N, ação da Lambda, Lambda ou container no CRUD (ADR) e hospedagem do front-end.
+- Documentar variáveis de ambiente e passos de recriação para novas sessões do Learner Lab.
+
+### Observações
+
+A resposta parece não ter usado o conteúdo real de `specs/spec.md`: cita campos, personas, autenticação de administrador e miniaturas que não existem na especificação e contrariam o escopo definido (sem login, sem processamento complexo de imagem). Várias sugestões já estão atendidas no arquivo atual (escolha 1:N, ação concreta da Lambda, ADR pendente para a Aula 2).
+
+### Decisão do grupo
+
+Pendente. O grupo ainda precisa discutir quais sugestões aceitar, rejeitar ou corrigir e registrar aqui os motivos.
