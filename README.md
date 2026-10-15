@@ -16,7 +16,7 @@ O projeto prevê um sistema usado por um funcionário para cadastrar autores e l
 ## Documentos
 
 - [Especificação inicial](specs/spec.md): problema, persona, histórias, critérios de aceite e requisitos futuros.
-- [Registro de IA](docs/ia-log.md): uso real de IA e revisão pendente no GitHub Copilot.
+- [Registro de IA](docs/ia-log.md): uso real de IA e revisão com GitHub Copilot.
 
 `specs/design.md` e `specs/tasks.md` ainda não foram criados: arquitetura, decisões e planejamento serão preparados nas próximas etapas. Este pacote não contém aplicação, infraestrutura ou testes de funcionamento.
 
@@ -27,8 +27,9 @@ O projeto prevê um sistema usado por um funcionário para cadastrar autores e l
 - [x] Especificação inicial escrita com histórias e critérios de aceite.
 - [x] Primeiro registro honesto de uso de IA criado.
 - [ ] Grupo revisar e aceitar a especificação e a divisão de participação.
-- [ ] Revisar a especificação com GitHub Copilot e registrar o resultado real em `docs/ia-log.md`.
-- [ ] Criar o repositório no GitHub e enviar estes arquivos.
+- [x] Revisar a especificação com GitHub Copilot e registrar o resultado real em `docs/ia-log.md`.
+- [ ] Grupo decidir o que aceitar ou rejeitar das sugestões do Copilot (Entrada 02 do `docs/ia-log.md`).
+- [x] Criar o repositório no GitHub e enviar estes arquivos.
 - [ ] Dar acesso ao professor; usuário GitHub ainda não informado.
 - [ ] Enviar o link do repositório no Moodle pelos próprios integrantes.
 
