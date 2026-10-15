@@ -1,6 +1,6 @@
 # Especificação inicial — Biblioteca Simples
 
-**Estado:** funcionalidades planejadas, não implementadas. Documento preparado em 15/10/2026 para revisão do grupo na Aula 1.
+**Estado:** especificação da Aula 1. Funcionalidades planejadas, ainda não implementadas.
 
 ## Problema e público
 
@@ -25,13 +25,11 @@ Ficam fora: empréstimos, reservas, multas, pagamentos, login, perfis de acesso,
 
 ID é um identificador único gerado pelo sistema. Um autor pode ter zero ou vários livros; cada livro deve pertencer a exatamente um autor existente. Esse relacionamento é chamado **1:N (um para muitos)**. Livros com vários autores não fazem parte desta simplificação.
 
-Para a etapa de capas, também será necessário associar ao livro a chave do objeto no S3, o tamanho em bytes e o tipo de conteúdo. A organização desses dados no banco será definida na Aula 2; não foi definida uma entidade adicional nesta entrega.
+Para a etapa de capas, também será necessário associar ao livro a chave do objeto no S3, o tamanho em bytes e o tipo de conteúdo. A organização desses dados no banco será definida no design.
 
-Regras propostas para revisão: nomes e títulos devem conter ao menos um caractere que não seja espaço; ano de publicação deve ser um número inteiro entre 1 e o ano corrente; nomes de autores e títulos repetidos serão permitidos, pois a identificação será feita pelo ID. O nome sozinho não identifica necessariamente uma pessoa única.
+Regras de validação: nomes e títulos devem conter ao menos um caractere que não seja espaço; ano de publicação deve ser um número inteiro entre 1 e o ano corrente; nomes de autores e títulos repetidos serão permitidos, pois a identificação será feita pelo ID. O nome sozinho não identifica necessariamente uma pessoa única.
 
 ## Histórias de usuário e critérios de aceite
-
-Todos os critérios abaixo são condições para testes futuros, não resultados de testes já realizados.
 
 ### HU-01 — Manter autores
 
@@ -74,7 +72,7 @@ Como funcionário, quero enviar uma imagem de capa para um livro existente para 
 - A aplicação solicita ao backend uma URL pré-assinada, isto é, uma autorização temporária para enviar um arquivo específico ao Amazon S3.
 - O navegador envia a imagem diretamente ao S3, sem que o backend receba o conteúdo do arquivo para retransmiti-lo.
 - A autorização é vinculada a um livro existente; livro inexistente é rejeitado.
-- A proposta inicial aceita PNG e JPEG de até 5 MB; formato ou tamanho inválido gera mensagem e não fica associado como capa válida.
+- São aceitos PNG e JPEG de até 5 MB; formato ou tamanho inválido gera mensagem e não fica associado como capa válida.
 - Após envio e processamento bem-sucedidos, a capa fica vinculada ao livro correspondente e pode ser visualizada na aplicação.
 - Uma falha de envio é informada, sem apresentar a capa como concluída.
 - Cada livro exibe uma capa atual; um novo envio válido substitui a associação da capa anterior. A política de retenção dos objetos antigos será definida na arquitetura.
@@ -117,13 +115,10 @@ Como funcionário, quero consultar a quantidade de livros por autor para conhece
 - **RNF-01:** RDS em subnet privada, sem acesso público; documentar Security Groups (regras de tráfego de rede).
 - **RNF-02:** nenhuma senha ou chave no repositório, nos exemplos ou nas evidências.
 - **RNF-03:** documentar a retomada após reiniciar o Learner Lab, sem IP fixo no código.
-- **RNF-04:** na Aula 2, justificar a decisão entre Lambda e container para o CRUD em um ADR (registro de decisão de arquitetura). Decisão ainda não tomada.
+- **RNF-04:** na Aula 2, justificar a decisão entre Lambda e container para o CRUD em um ADR (registro de decisão de arquitetura).
 - **RNF-05:** criar infraestrutura pelo console ou CLI (interface de linha de comando), sem Terraform, CloudFormation ou SAM.
 - Usar LabRole nas Lambdas e LabInstanceProfile na EC2 quando necessário; não prever criação de roles IAM próprias no Learner Lab.
 - Evitar NAT Gateway; prever um endpoint Gateway do S3 quando necessário para acesso ao S3 a partir da VPC (rede virtual privada).
 - Configurar CORS no API Gateway e no S3, permitindo as origens necessárias ao front-end. CORS são regras do navegador para chamadas entre origens diferentes.
 - Manter recursos pequenos e custos baixos, respeitando as limitações do laboratório.
 
-## Pendências de validação
-
-O grupo ainda precisa revisar e aceitar estas propostas, inclusive os limites de arquivo e a regra de ano. A revisão com GitHub Copilot está pendente. Não há código, implantação, testes executados ou arquitetura aprovada nesta etapa.
