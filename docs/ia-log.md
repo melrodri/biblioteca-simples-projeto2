@@ -56,3 +56,20 @@ Foi enviado o link de `specs/spec.md` no repositório, um resumo do enunciado (R
 
 A resposta parece não ter usado o conteúdo real de `specs/spec.md`: cita campos, personas, autenticação de administrador e miniaturas que não existem na especificação e contrariam o escopo definido (sem login, sem processamento complexo de imagem). Várias sugestões já estão atendidas no arquivo atual (escolha 1:N, ação concreta da Lambda, ADR previsto para a Aula 2).
 
+
+### O que o grupo aceitou, rejeitou ou corrigiu
+
+| Sugestão do Copilot | Decisão | Motivo |
+| --- | --- | --- |
+| Login e perfil de administrador | Rejeitada | Fora do escopo: o sistema é usado por um funcionário, sem login. |
+| Campos extras (bio, sinopse, ISBN, páginas, largura/altura) | Rejeitada | Mantemos só os dados necessários para o CRUD, a capa e o relatório. |
+| Lambda gerar miniatura da capa | Rejeitada | A Lambda grava apenas chave, tamanho e tipo do arquivo, evitando processamento de imagem. |
+| Relatório com média de páginas e filtro por ano | Rejeitada | O relatório fica só com a quantidade de livros por autor, que já atende ao RF-04. |
+| Personas de estudante e desenvolvedor | Rejeitada | O único usuário do sistema é o funcionário da biblioteca. |
+| Rotas de API e códigos HTTP nos critérios | Adiada | Serão definidas no `specs/design.md` (Aula 2). |
+| Relação 1:N entre autor e livro | Aceita | Já estava na especificação; é a forma mais simples de atender ao RF-01. |
+| ADR sobre Lambda ou container no CRUD | Aceita | Será feito na Aula 2, conforme o RNF-04. |
+| Documentar variáveis de ambiente e passos para recriar o ambiente no Learner Lab | Aceita | Ajuda a cumprir o RNF-03; entrará no README quando houver infraestrutura. |
+| Hospedagem do front-end | Adiada | Será decidida no `specs/design.md`. |
+
+As propostas da Entrada 01 (ano entre 1 e o ano corrente, capas PNG/JPEG de até 5 MB e eventos repetidos sem duplicar metadados) foram aceitas e mantidas na especificação.
