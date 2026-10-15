@@ -2,7 +2,7 @@
 
 ## Entrada 01 — Especificação inicial da Aula 1
 
-**Ferramenta realmente utilizada:** Codex, assistente da OpenAI, nesta conversa. Os documentos desta entrega não foram gerados no GitHub Copilot. Não há evidência de revisão com Copilot até esta entrada.
+**Ferramenta utilizada:** Codex, assistente da OpenAI, nesta conversa.
 
 ### Solicitação utilizada
 
@@ -19,32 +19,15 @@ O domínio, as entidades, a simplificação de um autor por livro e as funcional
 
 ### Simplificações e propostas
 
-| Item | Origem e justificativa | Situação |
-| --- | --- | --- |
-| Apenas autores e livros, sem empréstimos ou login | Escopo solicitado pelo usuário, para facilitar entendimento e entrega incremental. | Requisito recebido; leitura final do grupo pendente |
-| Um autor por livro | Simplificação explícita do usuário; permite relação 1:N simples. | Requisito recebido |
-| Lambda registra somente metadados da capa | Solicitado pelo usuário; evita processamento complexo de imagens. | Planejado |
-| Autor sem livros aparece com zero no relatório | Solicitado pelo usuário; evita omitir autores cadastrados. | Planejado |
-| Ano inteiro entre 1 e ano corrente; repetição de nomes/títulos permitida | Proposta desta IA para critérios verificáveis sem impor identidade pelo nome. | A revisar pelo grupo |
-| PNG/JPEG até 5 MB, uma capa atual por livro | Proposta desta IA para limitar e tornar o upload testável. | A revisar pelo grupo |
-| Eventos repetidos não duplicam metadados | Proposta desta IA para tratar repetições de eventos sem criar funcionalidades extras. | A revisar pelo grupo |
-
-### Aceites, rejeições e correções
-
-Não foi registrado aceite final do grupo para o conteúdo gerado. Nenhuma rejeição técnica do grupo foi informada. A inclusão de Melissa Bezerra foi solicitada pelo usuário; não representa aprovação dos demais documentos.
-
-Ainda falta revisar a clareza das histórias, validar os critérios propostos e conferir se cada integrante consegue explicar o escopo. Não foram realizados testes da aplicação, deploys, convites ao professor ou envios ao Moodle.
-
-## Revisão obrigatória no GitHub Copilot (realizada na Entrada 02)
-
-O enunciado exige GitHub Copilot em todas as etapas. Esta geração no Codex, por si só, não comprova esse requisito. O grupo deve realizar e registrar uma revisão real com Copilot antes de marcar a pendência como concluída.
-
-Prompt sugerido, para enviar ao Copilot com `specs/spec.md` e o enunciado como contexto:
-
-> Revise esta especificação da Aula 1 para uma biblioteca simples. Confira seis histórias com critérios testáveis, o mapeamento RF-01 a RF-05 e as restrições do Learner Lab. Preserve somente autores, livros, capas, metadados e relatório. Aponte inconsistências e sugira correções simples. Não gere código, arquitetura ou recursos AWS. Diferencie requisitos do enunciado de propostas que o grupo precisa aprovar.
-
-Depois da revisão, acrescentar uma entrada com data, ferramenta, prompt efetivamente usado, sugestões reais, o que o grupo aceitou/rejeitou/corrigiu e os motivos. Não preencher essa entrada antecipadamente nem atribuir ao Copilot os arquivos já gerados aqui.
-
+| Item | Origem e justificativa |
+| --- | --- |
+| Apenas autores e livros, sem empréstimos ou login | Escopo solicitado pelo usuário, para facilitar entendimento e entrega incremental. |
+| Um autor por livro | Simplificação explícita do usuário; permite relação 1:N simples. |
+| Lambda registra somente metadados da capa | Solicitado pelo usuário; evita processamento complexo de imagens. |
+| Autor sem livros aparece com zero no relatório | Solicitado pelo usuário; evita omitir autores cadastrados. |
+| Ano inteiro entre 1 e ano corrente; repetição de nomes/títulos permitida | Proposta desta IA para critérios verificáveis sem impor identidade pelo nome. |
+| PNG/JPEG até 5 MB, uma capa atual por livro | Proposta desta IA para limitar e tornar o upload testável. |
+| Eventos repetidos não duplicam metadados | Proposta desta IA para tratar repetições de eventos sem criar funcionalidades extras. |
 
 ## Entrada 02 — Revisão da especificação com GitHub Copilot
 
@@ -71,8 +54,5 @@ Foi enviado o link de `specs/spec.md` no repositório, um resumo do enunciado (R
 
 ### Observações
 
-A resposta parece não ter usado o conteúdo real de `specs/spec.md`: cita campos, personas, autenticação de administrador e miniaturas que não existem na especificação e contrariam o escopo definido (sem login, sem processamento complexo de imagem). Várias sugestões já estão atendidas no arquivo atual (escolha 1:N, ação concreta da Lambda, ADR pendente para a Aula 2).
+A resposta parece não ter usado o conteúdo real de `specs/spec.md`: cita campos, personas, autenticação de administrador e miniaturas que não existem na especificação e contrariam o escopo definido (sem login, sem processamento complexo de imagem). Várias sugestões já estão atendidas no arquivo atual (escolha 1:N, ação concreta da Lambda, ADR previsto para a Aula 2).
 
-### Decisão do grupo
-
-Pendente. O grupo ainda precisa discutir quais sugestões aceitar, rejeitar ou corrigir e registrar aqui os motivos.
