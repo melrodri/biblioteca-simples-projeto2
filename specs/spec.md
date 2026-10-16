@@ -8,7 +8,29 @@ Um funcionário precisa manter um catálogo simples de autores e livros. Anotaç
 
 Público-alvo: funcionários responsáveis pelo cadastro do catálogo de uma pequena biblioteca.
 
-Persona ilustrativa, sem representar uma pessoa real: um funcionário que usa o computador para cadastrar e consultar livros, mas não tem conhecimentos técnicos de nuvem. Ele precisa de campos claros e mensagens simples quando um cadastro não puder ser salvo.
+## Personas
+
+Personas fictícias. As duas são funcionárias da mesma pequena biblioteca e usam o mesmo sistema, sem login ou perfis de acesso.
+
+### Ana Souza — bibliotecária
+
+- **Idade:** 45 anos.
+- **Familiaridade com tecnologia:** média; usa formulários web simples sem dificuldade.
+- **O que faz no sistema:** cadastra, edita e exclui autores e livros, liga cada livro ao autor certo, envia as capas e consulta o relatório.
+- **Objetivos:** manter o catálogo correto e saber quantos livros cada autor tem para planejar compras.
+- **Dificuldades atuais:** dados espalhados em anotações e planilhas, capas guardadas em pastas soltas e contagem de livros por autor feita à mão.
+- **Histórias que usa:** HU-01, HU-02, HU-03, HU-04 e HU-06. A HU-05 acontece automaticamente quando ela envia uma capa.
+
+### Marta Lima — atendente
+
+- **Idade:** 62 anos.
+- **Familiaridade com tecnologia:** baixa a média; prefere consultar a alterar dados.
+- **O que faz no sistema:** consulta autores, livros e capas para responder aos leitores e vê o relatório de livros por autor. Não faz cadastros.
+- **Objetivos:** encontrar rapidamente as informações de um livro ou autor.
+- **Dificuldades atuais:** telas com muitos campos técnicos e dependência de colegas para conferir informações.
+- **Histórias que usa:** consultas das HU-01 e HU-02 e o relatório da HU-06.
+
+Por isso, o sistema precisa de campos claros e mensagens simples quando um cadastro não puder ser salvo.
 
 ## Objetivo e limites
 
