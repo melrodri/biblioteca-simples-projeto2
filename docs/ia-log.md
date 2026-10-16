@@ -127,3 +127,26 @@ Gerar o `specs/design.md` a partir do `specs/spec.md` e do enunciado: diagrama d
 | Secrets Manager para a senha do banco | Rejeitada por agora | Variáveis de ambiente já cumprem o RNF-02; Secrets Manager fica como possível bônus. |
 | Provisioned Concurrency para reduzir cold start | Rejeitada | Gera custo contínuo e o atraso é aceitável para o uso previsto. |
 | Corrigir "trechos truncados e acentuação" | Rejeitada | Conferimos o arquivo e não há trechos truncados; foi uma leitura incorreta da ferramenta. |
+
+## Entrada 05 — Personas da especificação com GitHub Copilot
+
+**Data:** 15/10/2026
+**Ferramenta:** GitHub Copilot Chat (github.com/copilot), modo Ask, modelo Auto, com o repositório anexado como contexto.
+
+### Prompt utilizado
+
+> Com base no arquivo specs/spec.md do repositório melrodri/biblioteca-simples-projeto2, gere a seção de personas da especificação. O enunciado da Aula 1 pede 'personas' (no plural). Restrições: o sistema não tem login nem perfis de acesso; todas as personas são funcionários de uma pequena biblioteca que usam o mesmo sistema; não adicione funcionalidades novas além de autores, livros, capas, metadados da capa e relatório de livros por autor. Para cada persona (2 ou 3), traga: nome fictício, idade, função, familiaridade com tecnologia, objetivos, dificuldades atuais e quais histórias (HU-01 a HU-06) ela mais usa. Responda em português, em formato pronto para colar em Markdown. Não gere código.
+
+### O que o Copilot gerou
+
+Três personas: Ana Souza (bibliotecária chefe), João Pereira (assistente de acervo) e Marta Lima (atendimento ao público), cada uma com idade, função, familiaridade com tecnologia, objetivos, dificuldades e histórias mais usadas.
+
+### O que o grupo aceitou, rejeitou ou corrigiu
+
+| Sugestão do Copilot | Decisão | Motivo |
+| --- | --- | --- |
+| Personas com nome, idade, objetivos e dificuldades | Aceita | Deixa claro para quem o sistema é feito. |
+| Três personas | Corrigida | Reduzimos para duas: a bibliotecária, que cadastra, e a atendente, que só consulta. O João fazia o mesmo que a Ana. |
+| Ligação das personas às histórias | Corrigida | O Copilot trocou as histórias (por exemplo, citou a HU-03 como envio de capa e a HU-05 como consulta). Ajustamos conforme o spec. |
+| Preenchimento manual dos metadados da capa | Rejeitada | Os metadados são registrados automaticamente pela Lambda (HU-05). |
+| Busca de títulos, impressão e controle de duplicatas | Rejeitada | Fora do escopo; nomes e títulos repetidos são permitidos e diferenciados pelo ID. |
