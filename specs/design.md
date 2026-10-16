@@ -3,41 +3,7 @@
 Este documento descreve como o sistema será construído na AWS (Learner Lab): arquitetura, modelo de dados, rotas da API, regras de rede e decisões de arquitetura (ADRs). Ele parte da especificação em [`specs/spec.md`](spec.md).
 
 ## 1. Diagrama de arquitetura
-
-```mermaid
-flowchart LR
-    U[Funcionário<br/>navegador]
-
-    subgraph NET[Serviços públicos da AWS]
-        SITE[S3 - site estático<br/>front-end]
-        APIGW[API Gateway<br/>HTTP API]
-        CAPAS[(S3 - bucket de capas<br/>privado)]
-    end
-
-    subgraph VPC
-        subgraph PRIV[Subnets privadas]
-            L1[Lambda<br/>crud]
-            L2[Lambda<br/>url-upload]
-            L3[Lambda<br/>processa-capa]
-            L4[Lambda<br/>relatorio]
-            RDS[(Amazon RDS<br/>MySQL)]
-        end
-    end
-
-    U -->|abre o site| SITE
-    U -->|chamadas da API| APIGW
-    APIGW --> L1
-    APIGW --> L2
-    APIGW --> L4
-    L1 -->|SQL| RDS
-    L2 -->|confere o livro| RDS
-    L4 -->|JOIN + GROUP BY| RDS
-    L2 -.->|gera URL pré-assinada| U
-    U -->|envia a capa direto| CAPAS
-    CAPAS -->|evento ObjectCreated| L3
-    L3 -->|HeadObject via<br/>VPC Gateway Endpoint| CAPAS
-    L3 -->|grava metadados| RDS
-```
+<img width="1600" height="783" alt="WhatsApp Image 2026-10-16 at 09 34 34" src="https://github.com/user-attachments/assets/2aedd9a0-aa17-443b-b259-c11b85c6cde8" />
 
 ### Componentes
 
