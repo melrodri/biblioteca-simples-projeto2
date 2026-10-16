@@ -33,29 +33,7 @@ A imagem anterior de um livro continua no bucket, mas deixa de ser a capa atual.
 
 ## 2. Modelo de dados (ER)
 
-```mermaid
-erDiagram
-    AUTOR ||--o{ LIVRO : escreve
-    LIVRO ||--o| CAPA : possui
-
-    AUTOR {
-        int id PK
-        varchar nome
-    }
-    LIVRO {
-        int id PK
-        varchar titulo
-        int ano_publicacao
-        int autor_id FK
-    }
-    CAPA {
-        int livro_id PK, FK
-        varchar s3_chave UK
-        bigint tamanho_bytes
-        varchar tipo_conteudo
-        datetime atualizado_em
-    }
-```
+<img width="605" height="1600" alt="WhatsApp Image 2026-10-16 at 09 34 34 (1)" src="https://github.com/user-attachments/assets/f774b3ef-a2d3-45b0-8fa5-1524a965f60d" />
 
 | Tabela | Campos | Regras |
 | --- | --- | --- |
