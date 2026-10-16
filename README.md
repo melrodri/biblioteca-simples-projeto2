@@ -15,6 +15,10 @@ Sistema web usado por um funcionário para cadastrar autores e livros, com envio
 
 **Situação:** Aula 2 — especificação e design. A aplicação ainda não foi implementada.
 
+## Página do projeto
+
+http://biblioteca-simples-site.s3-website-us-east-1.amazonaws.com
+
 ## Documentos
 
 - [Especificação](specs/spec.md)
