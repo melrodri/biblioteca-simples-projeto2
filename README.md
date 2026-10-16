@@ -18,7 +18,7 @@ Sistema web usado por um funcionário para cadastrar autores e livros, com envio
 **Aula 1 — Especificação**
 
 - Grupo formado e domínio escolhido: biblioteca simples.
-- [Especificação](specs/spec.md) com problema, persona, seis histórias de usuário com critérios de aceite e aplicação dos RF-01 a RF-05.
+- [Especificação](specs/spec.md) com problema, duas personas, seis histórias de usuário com critérios de aceite e aplicação dos RF-01 a RF-05.
 - Revisão da especificação com GitHub Copilot, registrada no [registro de IA](docs/ia-log.md).
 
 **Aula 2 — Design**
