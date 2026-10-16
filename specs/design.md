@@ -1,0 +1,215 @@
+# Design — Biblioteca Simples
+
+Este documento descreve como o sistema será construído na AWS (Learner Lab): arquitetura, modelo de dados, rotas da API, regras de rede e decisões de arquitetura (ADRs). Ele parte da especificação em [`specs/spec.md`](spec.md).
+
+## 1. Diagrama de arquitetura
+
+```mermaid
+flowchart LR
+    U[Funcionário<br/>navegador]
+
+    subgraph NET[Serviços públicos da AWS]
+        SITE[S3 - site estático<br/>front-end]
+        APIGW[API Gateway<br/>HTTP API]
+        CAPAS[(S3 - bucket de capas<br/>privado)]
+    end
+
+    subgraph VPC
+        subgraph PRIV[Subnets privadas]
+            L1[Lambda<br/>crud]
+            L2[Lambda<br/>url-upload]
+            L3[Lambda<br/>processa-capa]
+            L4[Lambda<br/>relatorio]
+            RDS[(Amazon RDS<br/>MySQL)]
+        end
+        EP[VPC Gateway Endpoint<br/>S3]
+    end
+
+    U -->|abre o site| SITE
+    U -->|chamadas da API| APIGW
+    APIGW --> L1
+    APIGW --> L2
+    APIGW --> L4
+    L1 -->|SQL| RDS
+    L2 -->|confere o livro| RDS
+    L4 -->|JOIN + GROUP BY| RDS
+    L2 -.->|gera URL pré-assinada| U
+    U -->|envia a capa direto| CAPAS
+    CAPAS -->|evento ObjectCreated| L3
+    L3 -->|lê tamanho e tipo| EP
+    EP --> CAPAS
+    L3 -->|grava metadados| RDS
+```
+
+### Componentes
+
+| Componente | Função no sistema | Requisito |
+| --- | --- | --- |
+| S3 (site estático) | Hospeda o front-end (HTML, CSS e JavaScript) acessível pela internet. | RF-05 |
+| API Gateway (HTTP API) | Recebe as chamadas do front-end e encaminha para a Lambda correta. CORS configurado para a origem do site. | RF-01, RF-02, RF-04 |
+| Lambda `crud` | Cadastro, consulta, edição e exclusão de autores e livros. | RF-01 |
+| Lambda `url-upload` | Confere se o livro existe e gera a URL pré-assinada para envio da capa. | RF-02 |
+| S3 (bucket de capas) | Guarda as imagens das capas. Privado; o acesso é feito só por URLs pré-assinadas. CORS liberado para o site. | RF-02 |
+| Lambda `processa-capa` | Disparada pela criação de um objeto no bucket de capas. Lê chave, tamanho e tipo de conteúdo e grava no RDS. | RF-03 |
+| Lambda `relatorio` | Executa a consulta de livros por autor com JOIN e GROUP BY. | RF-04 |
+| Amazon RDS (MySQL, db.t3.micro) | Banco relacional com autores, livros e capas. Em subnet privada, sem acesso público. | RF-01, RNF-01 |
+| VPC Gateway Endpoint (S3) | Permite que a Lambda `processa-capa`, dentro da VPC, acesse o S3 sem internet e sem NAT Gateway. | Learner Lab |
+
+Todas as Lambdas usam a **LabRole**. Nenhuma role IAM é criada.
+
+### Fluxo de envio da capa
+
+1. O funcionário escolhe a imagem no site.
+2. O site chama `POST /livros/{id}/capa/url-upload` informando o tipo do arquivo.
+3. A Lambda `url-upload` confere se o livro existe e devolve uma URL pré-assinada válida por 5 minutos, com a chave `capas/{livro_id}/{uuid}.{extensao}`.
+4. O navegador envia a imagem direto ao bucket de capas usando essa URL.
+5. O S3 dispara a Lambda `processa-capa`, que tira o `livro_id` da chave, consulta tamanho e tipo do objeto e grava os dados na tabela `capa`.
+
+## 2. Modelo de dados (ER)
+
+```mermaid
+erDiagram
+    AUTOR ||--o{ LIVRO : escreve
+    LIVRO ||--o| CAPA : possui
+
+    AUTOR {
+        int id PK
+        varchar nome
+    }
+    LIVRO {
+        int id PK
+        varchar titulo
+        int ano_publicacao
+        int autor_id FK
+    }
+    CAPA {
+        int livro_id PK, FK
+        varchar s3_chave UK
+        bigint tamanho_bytes
+        varchar tipo_conteudo
+        datetime atualizado_em
+    }
+```
+
+| Tabela | Campos | Regras |
+| --- | --- | --- |
+| `autor` | `id` (PK, auto incremento), `nome` (varchar 150, obrigatório) | Não pode ser excluído enquanto tiver livros. |
+| `livro` | `id` (PK, auto incremento), `titulo` (varchar 200, obrigatório), `ano_publicacao` (int, obrigatório), `autor_id` (FK → `autor.id`, obrigatório) | Relação **1:N**: um autor tem zero ou vários livros; cada livro tem um autor. A FK usa `ON DELETE RESTRICT`. |
+| `capa` | `livro_id` (PK e FK → `livro.id`), `s3_chave` (único), `tamanho_bytes`, `tipo_conteudo`, `atualizado_em` | Relação **1:1** com livro: cada livro tem no máximo uma capa atual. Um novo envio substitui a linha. Ao excluir o livro, a capa é excluída junto (`ON DELETE CASCADE`). |
+
+Como `livro_id` é a chave da tabela `capa`, um evento repetido do S3 apenas atualiza a mesma linha e não duplica metadados.
+
+## 3. Rotas da API
+
+Base: endereço do API Gateway. Corpo e respostas em JSON.
+
+| Método | Rota | O que faz | Lambda |
+| --- | --- | --- | --- |
+| GET | `/autores` | Lista os autores | `crud` |
+| GET | `/autores/{id}` | Consulta um autor | `crud` |
+| POST | `/autores` | Cadastra um autor | `crud` |
+| PUT | `/autores/{id}` | Edita o nome do autor | `crud` |
+| DELETE | `/autores/{id}` | Exclui o autor (só se não tiver livros) | `crud` |
+| GET | `/livros` | Lista os livros com o nome do autor | `crud` |
+| GET | `/livros/{id}` | Consulta um livro | `crud` |
+| POST | `/livros` | Cadastra um livro | `crud` |
+| PUT | `/livros/{id}` | Edita título, ano e autor | `crud` |
+| DELETE | `/livros/{id}` | Exclui o livro | `crud` |
+| POST | `/livros/{id}/capa/url-upload` | Gera a URL pré-assinada para enviar a capa | `url-upload` |
+| GET | `/livros/{id}/capa` | Retorna os metadados da capa e uma URL temporária para exibi-la | `crud` |
+| GET | `/relatorios/livros-por-autor` | Quantidade de livros por autor | `relatorio` |
+
+### Respostas de erro
+
+| Código | Quando acontece |
+| --- | --- |
+| 400 | Dados inválidos (nome ou título vazio, ano fora do intervalo, tipo de arquivo não aceito) |
+| 404 | Autor, livro ou capa não encontrado |
+| 409 | Tentativa de excluir autor que ainda tem livros |
+
+### Exemplos
+
+`POST /livros`
+
+```json
+{ "titulo": "Dom Casmurro", "ano_publicacao": 1899, "autor_id": 1 }
+```
+
+`GET /relatorios/livros-por-autor`
+
+```json
+[
+  { "autor_id": 1, "nome": "Machado de Assis", "quantidade_livros": 2 },
+  { "autor_id": 2, "nome": "Clarice Lispector", "quantidade_livros": 0 }
+]
+```
+
+Consulta usada no relatório:
+
+```sql
+SELECT a.id AS autor_id, a.nome, COUNT(l.id) AS quantidade_livros
+FROM autor a
+LEFT JOIN livro l ON l.autor_id = a.id
+GROUP BY a.id, a.nome
+ORDER BY a.nome;
+```
+
+O `LEFT JOIN` mantém autores sem livros, e `COUNT(l.id)` conta zero para eles.
+
+## 4. Rede e Security Groups
+
+| Recurso | Configuração |
+| --- | --- |
+| VPC | VPC padrão do Learner Lab |
+| Subnets privadas | Duas subnets em zonas diferentes (exigência do RDS), sem rota para a internet |
+| RDS | Nessas subnets, com **acesso público desativado** |
+| Endpoint | VPC Gateway Endpoint do S3 associado à tabela de rotas das subnets privadas |
+| NAT Gateway | Não utilizado |
+
+| Security Group | Entrada | Saída |
+| --- | --- | --- |
+| `sg-lambda` | Nenhuma | MySQL (3306) para `sg-rds`; HTTPS (443) para o S3 pelo endpoint |
+| `sg-rds` | MySQL (3306) somente a partir de `sg-lambda` | Padrão |
+
+A regra do RDS aponta para outro Security Group, não para um IP. Assim, nada depende de endereço fixo.
+
+## 5. Configuração e segredos
+
+- Host, usuário, senha e nome do banco ficam em **variáveis de ambiente** das Lambdas, preenchidas no console.
+- O nome do bucket de capas também fica em variável de ambiente.
+- Nenhuma senha ou chave é salva no repositório (RNF-02).
+- O endereço da API usado pelo front-end fica em um único arquivo de configuração do site, atualizado se a API for recriada.
+- O passo a passo para recriar os recursos numa nova sessão do Learner Lab ficará no README (RNF-03, RNF-05).
+
+## 6. ADRs
+
+### ADR-001 — CRUD em Lambda
+
+**Contexto.** O RNF-04 pede para decidir se o CRUD de autores e livros roda em Lambda ou em container (EC2/ECS). O sistema tem pouco acesso, roda no Learner Lab (orçamento limitado e sessão que expira) e já usa Lambda nos RF-03 e RF-04.
+
+**Opções consideradas.**
+
+| | Lambda | Container em EC2/ECS |
+| --- | --- | --- |
+| Custo | Cobra só pelas execuções | Cobra enquanto a instância estiver ligada |
+| Learner Lab | Continua funcionando após reiniciar a sessão; não depende de IP | A instância para com a sessão e o IP público muda |
+| Manutenção | Sem servidor para administrar | Sistema operacional, Docker e porta para configurar |
+| Integração | Direta com API Gateway, já usado no RF-04 | Exige integração do API Gateway com a instância ou um balanceador |
+| Desvantagens | Atraso na primeira chamada (cold start) e limite de 15 minutos por execução | Mais configuração e risco de esquecer a instância ligada |
+
+**Decisão.** O CRUD roda em **Lambda**, atrás do API Gateway, dentro da VPC para acessar o RDS.
+
+**Consequências.**
+
+- Toda a API segue o mesmo padrão (API Gateway + Lambda), o que simplifica o projeto.
+- Não há instância para ligar ou IP para atualizar quando a sessão do Learner Lab reinicia.
+- A primeira chamada após um tempo parado pode demorar alguns segundos. É aceitável para o uso previsto.
+- Cada execução abre conexão com o banco. Com pouco uso, isso não é um problema.
+
+### ADR-002 — Front-end em site estático no S3
+
+**Contexto.** O RF-05 exige um front-end publicado consumindo a API.
+
+**Decisão.** Publicar o front-end como site estático (HTML, CSS e JavaScript) em um bucket S3 com hospedagem de site ativada.
+
+**Consequências.** Não é preciso servidor para o site, o custo é praticamente zero e o endereço não muda entre sessões. O site só funciona chamando a API, por isso o CORS do API Gateway precisa liberar a origem do bucket.
