@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Biblioteca Simples</title>
+<style>
+  :root { --bg:#f6f4ef; --card:#fff; --ink:#1f2328; --muted:#5b6370; --accent:#2f5d50; --line:#e3ded3; }
+  * { box-sizing:border-box; }
+  body { margin:0; font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif; background:var(--bg); color:var(--ink); line-height:1.55; }
+  header { background:var(--accent); color:#fff; padding:56px 20px 48px; text-align:center; }
+  header h1 { margin:0 0 8px; font-size:clamp(28px,5vw,42px); }
+  header p { margin:0 auto; max-width:620px; opacity:.9; }
+  .tag { display:inline-block; margin-top:18px; padding:4px 12px; border:1px solid rgba(255,255,255,.5); border-radius:999px; font-size:14px; }
+  main { max-width:900px; margin:0 auto; padding:32px 16px 48px; }
+  h2 { font-size:20px; margin:32px 0 14px; }
+  .grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(200px,1fr)); gap:14px; }
+  .card { background:var(--card); border:1px solid var(--line); border-radius:10px; padding:18px; }
+  .card h3 { margin:0 0 6px; font-size:16px; color:var(--accent); }
+  .card p { margin:0; color:var(--muted); font-size:15px; }
+  ul.team { list-style:none; padding:0; margin:0; display:flex; flex-wrap:wrap; gap:10px; }
+  ul.team li { background:var(--card); border:1px solid var(--line); border-radius:8px; padding:8px 14px; }
+  footer { text-align:center; color:var(--muted); font-size:14px; padding:24px 16px 40px; }
+</style>
+</head>
+<body>
+<header>
+  <h1>Biblioteca Simples</h1>
+  <p>Catálogo de autores e livros para pequenas bibliotecas, com capas e relatório de livros por autor.</p>
+  <span class="tag">Em desenvolvimento — Projeto 2</span>
+</header>
+<main>
+  <h2>O que o sistema vai fazer</h2>
+  <div class="grid">
+    <div class="card"><h3>Autores</h3><p>Cadastrar, consultar, editar e excluir autores.</p></div>
+    <div class="card"><h3>Livros</h3><p>Cadastrar livros ligados a um autor, com título e ano.</p></div>
+    <div class="card"><h3>Capas</h3><p>Enviar a capa de cada livro; os dados da imagem são registrados automaticamente.</p></div>
+    <div class="card"><h3>Relatório</h3><p>Ver quantos livros cada autor tem no catálogo.</p></div>
+  </div>
+
+  <h2>Tecnologias</h2>
+  <div class="grid">
+    <div class="card"><h3>Amazon S3</h3><p>Site e armazenamento das capas.</p></div>
+    <div class="card"><h3>API Gateway + Lambda</h3><p>API do cadastro e do relatório.</p></div>
+    <div class="card"><h3>Amazon RDS</h3><p>Banco de dados MySQL em rede privada.</p></div>
+  </div>
+
+  <h2>Equipe</h2>
+  <ul class="team">
+    <li>Matheus Henrique</li>
+    <li>Luís Otávio</li>
+    <li>Matheus Romano</li>
+    <li>Melissa Bezerra</li>
+  </ul>
+</main>
+<footer>Serviços em Nuvem · Universidade Presbiteriana Mackenzie · 2026</footer>
+</body>
+</html>
