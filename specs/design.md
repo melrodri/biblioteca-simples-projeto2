@@ -22,7 +22,6 @@ flowchart LR
             L4[Lambda<br/>relatorio]
             RDS[(Amazon RDS<br/>MySQL)]
         end
-        EP[VPC Gateway Endpoint<br/>S3]
     end
 
     U -->|abre o site| SITE
@@ -36,8 +35,7 @@ flowchart LR
     L2 -.->|gera URL pré-assinada| U
     U -->|envia a capa direto| CAPAS
     CAPAS -->|evento ObjectCreated| L3
-    L3 -->|lê tamanho e tipo| EP
-    EP --> CAPAS
+    L3 -->|HeadObject via<br/>VPC Gateway Endpoint| CAPAS
     L3 -->|grava metadados| RDS
 ```
 
@@ -53,7 +51,7 @@ flowchart LR
 | Lambda `processa-capa` | Disparada pela criação de um objeto no bucket de capas. Lê chave, tamanho e tipo de conteúdo e grava no RDS. | RF-03 |
 | Lambda `relatorio` | Executa a consulta de livros por autor com JOIN e GROUP BY. | RF-04 |
 | Amazon RDS (MySQL, db.t3.micro) | Banco relacional com autores, livros e capas. Em subnet privada, sem acesso público. | RF-01, RNF-01 |
-| VPC Gateway Endpoint (S3) | Permite que a Lambda `processa-capa`, dentro da VPC, acesse o S3 sem internet e sem NAT Gateway. | Learner Lab |
+| VPC Gateway Endpoint (S3) | Rota associada às tabelas de rota das subnets privadas. Permite que a Lambda `processa-capa`, dentro da VPC, acesse o S3 sem internet e sem NAT Gateway. Não é um servidor nem aparece em regras de Security Group. | Learner Lab |
 
 Todas as Lambdas usam a **LabRole**. Nenhuma role IAM é criada.
 
@@ -61,9 +59,11 @@ Todas as Lambdas usam a **LabRole**. Nenhuma role IAM é criada.
 
 1. O funcionário escolhe a imagem no site.
 2. O site chama `POST /livros/{id}/capa/url-upload` informando o tipo do arquivo.
-3. A Lambda `url-upload` confere se o livro existe e devolve uma URL pré-assinada válida por 5 minutos, com a chave `capas/{livro_id}/{uuid}.{extensao}`.
+3. A Lambda `url-upload` confere se o livro existe e se o tipo é PNG ou JPEG, e devolve uma URL pré-assinada válida por 5 minutos, com a chave `capas/{livro_id}/{uuid}.{extensao}`.
 4. O navegador envia a imagem direto ao bucket de capas usando essa URL.
-5. O S3 dispara a Lambda `processa-capa`, que tira o `livro_id` da chave, consulta tamanho e tipo do objeto e grava os dados na tabela `capa`.
+5. O S3 dispara a Lambda `processa-capa`, que tira o `livro_id` da chave e faz um `HeadObject` no S3 para obter tamanho e tipo reais do arquivo. Se o arquivo for válido (PNG/JPEG até 5 MB), grava os dados na tabela `capa`; caso contrário, registra o erro no CloudWatch e não associa a capa.
+
+A imagem anterior de um livro continua no bucket, mas deixa de ser a capa atual. A remoção de arquivos antigos é feita manualmente, se necessário.
 
 ## 2. Modelo de dados (ER)
 
@@ -116,7 +116,7 @@ Base: endereço do API Gateway. Corpo e respostas em JSON.
 | PUT | `/livros/{id}` | Edita título, ano e autor | `crud` |
 | DELETE | `/livros/{id}` | Exclui o livro | `crud` |
 | POST | `/livros/{id}/capa/url-upload` | Gera a URL pré-assinada para enviar a capa | `url-upload` |
-| GET | `/livros/{id}/capa` | Retorna os metadados da capa e uma URL temporária para exibi-la | `crud` |
+| GET | `/livros/{id}/capa` | Retorna os metadados da capa e uma URL pré-assinada de leitura (GET), válida por 5 minutos, para exibi-la | `crud` |
 | GET | `/relatorios/livros-por-autor` | Quantidade de livros por autor | `relatorio` |
 
 ### Respostas de erro
@@ -168,10 +168,19 @@ O `LEFT JOIN` mantém autores sem livros, e `COUNT(l.id)` conta zero para eles.
 
 | Security Group | Entrada | Saída |
 | --- | --- | --- |
-| `sg-lambda` | Nenhuma | MySQL (3306) para `sg-rds`; HTTPS (443) para o S3 pelo endpoint |
+| `sg-lambda` | Nenhuma | MySQL (3306) com destino `sg-rds`; HTTPS (443) liberado, usado para acessar o S3 |
 | `sg-rds` | MySQL (3306) somente a partir de `sg-lambda` | Padrão |
 
 A regra do RDS aponta para outro Security Group, não para um IP. Assim, nada depende de endereço fixo.
+
+O acesso ao S3 a partir da VPC passa pelo Gateway Endpoint por meio da tabela de rotas; o endpoint não é referenciado nos Security Groups.
+
+### CORS
+
+| Onde | Configuração |
+| --- | --- |
+| Bucket de capas | Origem: endereço do site. Métodos: `PUT` e `GET`. Cabeçalho permitido: `Content-Type`. |
+| API Gateway | Origem: endereço do site. Métodos: `GET`, `POST`, `PUT`, `DELETE` e `OPTIONS`. Cabeçalho permitido: `Content-Type`. |
 
 ## 5. Configuração e segredos
 
@@ -203,7 +212,7 @@ A regra do RDS aponta para outro Security Group, não para um IP. Assim, nada de
 
 - Toda a API segue o mesmo padrão (API Gateway + Lambda), o que simplifica o projeto.
 - Não há instância para ligar ou IP para atualizar quando a sessão do Learner Lab reinicia.
-- A primeira chamada após um tempo parado pode demorar alguns segundos. É aceitável para o uso previsto.
+- A primeira chamada após um tempo parado pode demorar alguns segundos, um pouco mais por a Lambda estar dentro da VPC. É aceitável para o uso previsto.
 - Cada execução abre conexão com o banco. Com pouco uso, isso não é um problema.
 
 ### ADR-002 — Front-end em site estático no S3
@@ -212,4 +221,4 @@ A regra do RDS aponta para outro Security Group, não para um IP. Assim, nada de
 
 **Decisão.** Publicar o front-end como site estático (HTML, CSS e JavaScript) em um bucket S3 com hospedagem de site ativada.
 
-**Consequências.** Não é preciso servidor para o site, o custo é praticamente zero e o endereço não muda entre sessões. O site só funciona chamando a API, por isso o CORS do API Gateway precisa liberar a origem do bucket.
+**Consequências.** Não é preciso servidor para o site, o custo é praticamente zero e o endereço não muda entre sessões. O site só funciona chamando a API, por isso o CORS do API Gateway precisa liberar a origem do bucket. O endereço de site do S3 usa apenas HTTP; para HTTPS seria necessário o CloudFront, que fica como possível melhoria.
