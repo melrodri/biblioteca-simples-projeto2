@@ -1,4 +1,4 @@
-# Biblioteca Simples — Projeto 2
+# Biblioteca — Projeto 2
 
 Disciplina: Serviços em Nuvem. Professor: Joaquim Pessoa.
 
