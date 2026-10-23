@@ -1,0 +1,15 @@
+# Tarefas — Biblioteca Simples
+
+Estado em 22/10/2026. Os nomes dos responsáveis por cada tarefa devem ser combinados pelo grupo antes da apresentação. Os recursos da Aula 3 foram verificados no Learner Lab.
+
+| ID | Requisito | Tarefa | Responsável | Estado |
+|---|---|---|---|---|
+| T-01 | RF-01 | Versionar o esquema MySQL de autor e livro | Grupo | Concluído; tabelas criadas no RDS |
+| T-02 | RNF-01 | Criar duas subnets privadas, grupo de subnets e RDS sem acesso público | Grupo | Concluído; RDS disponível e privado |
+| T-03 | RNF-01 | Criar `biblioteca-lambda` e `biblioteca-rds` com acesso MySQL restrito | Grupo | Concluído; entrada do RDS só da Lambda |
+| T-04 | RF-01 | Publicar Lambda CRUD e executar evento `init_db` | Grupo | Concluído; resposta 200 |
+| T-05 | RF-01 | Criar rotas HTTP API e demonstrar CRUD de autores e livros | Grupo | Concluído; dez rotas e testes HTTP realizados |
+| T-06 | RNF-03/RNF-05 | Registrar IDs, endpoint sem segredos e passos de retomada | Grupo | Concluído em `docs/parte3.md` |
+| T-07 | RF-02/RF-03/RF-04/RF-05 | Upload, evento S3, relatório e front-end consumindo a API | Grupo | Aula 4 |
+
+Antes da apresentação, o grupo deve dividir as tarefas acima entre seus integrantes e verificar se a sessão do Learner Lab mantém os recursos ativos.

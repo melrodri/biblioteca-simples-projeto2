@@ -1,0 +1,7 @@
+lambda_crud/pacote/
+lambda_crud/*.zip
+__pycache__/
+*.pyc
+.env
+*.pem
+.aws/
