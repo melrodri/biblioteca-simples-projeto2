@@ -11,5 +11,3 @@ Estado em 22/10/2026. Os recursos da Aula 3 foram verificados no Learner Lab.
 | T-05 | RF-01 | Criar rotas HTTP API e demonstrar CRUD de autores e livros | Grupo | Concluído; dez rotas e testes HTTP realizados |
 | T-06 | RNF-03/RNF-05 | Registrar IDs, endpoint sem segredos e passos de retomada | Grupo | Concluído em `docs/parte3.md` |
 | T-07 | RF-02/RF-03/RF-04/RF-05 | Upload, evento S3, relatório e front-end consumindo a API | Grupo | Aula 4 |
-
-Antes da apresentação, o grupo deve dividir as tarefas acima entre seus integrantes e verificar se a sessão do Learner Lab mantém os recursos ativos.
