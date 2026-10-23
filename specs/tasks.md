@@ -1,6 +1,6 @@
 # Tarefas — Biblioteca Simples
 
-Estado em 22/10/2026. Os nomes dos responsáveis por cada tarefa devem ser combinados pelo grupo antes da apresentação. Os recursos da Aula 3 foram verificados no Learner Lab.
+Estado em 22/10/2026. Os recursos da Aula 3 foram verificados no Learner Lab.
 
 | ID | Requisito | Tarefa | Responsável | Estado |
 |---|---|---|---|---|
