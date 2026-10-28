@@ -39,11 +39,22 @@ Sistema web usado por um funcionário para cadastrar autores e livros, com envio
 
 **Estado em 22/10/2026:** CRUD funcionando no Learner Lab, região `us-east-1`. RDS privado, Lambda e dez rotas da HTTP API foram criados e testados. O site da Aula 2 ainda não consome a API; essa ligação faz parte da Aula 4.
 
+### Aula 4 — capas, relatório e site na EC2
+
+- O [site da biblioteca](http://3.90.6.87/) agora consome a API para o CRUD de autores e livros, envio de capa e relatório.
+- A EC2 publica o HTML e JavaScript. A Lambda permanece na VPC com acesso ao RDS privado; as capas ficam em S3 privado.
+- O envio da capa usa URL pré-assinada e evento S3 → Lambda → RDS. O relatório conta livros por autor com `LEFT JOIN` e `GROUP BY`.
+- [Passo a passo da apresentação, recursos AWS e retomada](docs/parte4.md). O IP da EC2 pode mudar depois que o Learner Lab for reiniciado.
+
+**Verificado em 28/10/2026:** site HTTP 200, relatório pela API, upload de capa no S3, metadados no RDS e registro no CloudWatch.
+
 **API:** [https://ml1m8ddi5j.execute-api.us-east-1.amazonaws.com](https://ml1m8ddi5j.execute-api.us-east-1.amazonaws.com). Exemplos: [autores](https://ml1m8ddi5j.execute-api.us-east-1.amazonaws.com/autores) e [livros](https://ml1m8ddi5j.execute-api.us-east-1.amazonaws.com/livros). Recursos do Learner Lab podem ser apagados entre sessões; confira a URL antes de apresentar.
 
 ## Página do projeto
 
 [Protótipo no S3](http://biblioteca-simples-site.s3-website-us-east-1.amazonaws.com/)
+
+[Site atual da Aula 4 na EC2](http://3.90.6.87/)
 
 ## Documentos
 
@@ -52,3 +63,4 @@ Sistema web usado por um funcionário para cadastrar autores e livros, com envio
 - [Registro de uso de IA](docs/ia-log.md)
 - [Registro da Aula 3](docs/ia-log-aula3.md)
 - [Implantação da Aula 3](docs/parte3.md)
+- [Implantação e demonstração da Aula 4](docs/parte4.md)
