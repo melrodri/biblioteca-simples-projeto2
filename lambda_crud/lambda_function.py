@@ -2,9 +2,14 @@
 
 import json
 import os
+import re
+import uuid
 from datetime import datetime, timezone
+from urllib.parse import unquote_plus
 
+import boto3
 import pymysql
+from botocore.config import Config
 from pymysql.cursors import DictCursor
 
 
@@ -89,16 +94,126 @@ def iniciar_banco(cursor):
         comandos = [parte.strip() for parte in arquivo.read().split(";") if "CREATE TABLE" in parte]
     for comando in comandos:
         cursor.execute(comando[comando.index("CREATE TABLE"):])
-    return {"mensagem": "Tabelas autor e livro prontas."}
+    return {"mensagem": "Tabelas autor, livro e capa prontas."}
+
+
+def s3():
+    return boto3.client("s3", region_name="us-east-1", config=Config(signature_version="s3v4"))
+
+
+def processar_capa(evento):
+    """Um upload em capas/ grava tamanho e tipo da imagem no RDS."""
+    bucket_esperado = os.environ["CAPAS_BUCKET"]
+    for registro in evento["Records"]:
+        bucket = registro["s3"]["bucket"]["name"]
+        chave = unquote_plus(registro["s3"]["object"]["key"])
+        if bucket != bucket_esperado:
+            continue
+        caminho = re.fullmatch(r"capas/([1-9][0-9]*)/[0-9a-f-]+\.(png|jpg)", chave)
+        if not caminho:
+            print("Arquivo ignorado fora do padrão de capas.")
+            continue
+        info = s3().head_object(Bucket=bucket, Key=chave)
+        tipo = info.get("ContentType")
+        tamanho = info.get("ContentLength", 0)
+        if tipo not in ("image/png", "image/jpeg") or not 0 < tamanho <= 5 * 1024 * 1024:
+            print("Capa ignorada: tipo ou tamanho inválido.")
+            continue
+        livro_id = int(caminho.group(1))
+        with conectar() as conexao:
+            with conexao.cursor() as cursor:
+                cursor.execute("SELECT id FROM livro WHERE id = %s", (livro_id,))
+                if not cursor.fetchone():
+                    print("Capa ignorada: livro não existe.")
+                    continue
+                cursor.execute(
+                    "INSERT INTO capa (livro_id, s3_chave, tamanho_bytes, tipo_conteudo) "
+                    "VALUES (%s, %s, %s, %s) ON DUPLICATE KEY UPDATE "
+                    "s3_chave = VALUES(s3_chave), tamanho_bytes = VALUES(tamanho_bytes), "
+                    "tipo_conteudo = VALUES(tipo_conteudo), atualizado_em = CURRENT_TIMESTAMP",
+                    (livro_id, chave, tamanho, tipo),
+                )
+                conexao.commit()
+        print(f"Capa processada: livro {livro_id}, {tamanho} bytes.")
+    return {"mensagem": "Evento S3 processado."}
+
+
+def rota_aula4(evento, partes, metodo):
+    """Retorna uma resposta para as três rotas novas ou None para o CRUD."""
+    if partes == ["relatorios", "livros-por-autor"] and metodo == "GET":
+        with conectar() as conexao:
+            with conexao.cursor() as cursor:
+                cursor.execute(
+                    "SELECT a.id AS autor_id, a.nome, COUNT(l.id) AS quantidade_livros "
+                    "FROM autor a LEFT JOIN livro l ON l.autor_id = a.id "
+                    "GROUP BY a.id, a.nome ORDER BY a.nome"
+                )
+                return resposta(200, cursor.fetchall())
+
+    if len(partes) == 4 and partes[0] == "livros" and partes[2] == "capa":
+        livro_id = inteiro_positivo(partes[1])
+        if livro_id is None:
+            return resposta(400, {"erro": "ID inválido."})
+        if partes[3] == "url-upload" and metodo == "POST":
+            dados = ler_corpo(evento)
+            tipo = dados.get("tipo_conteudo") if dados else None
+            if tipo not in ("image/png", "image/jpeg"):
+                return resposta(400, {"erro": "Use uma imagem PNG ou JPEG."})
+            with conectar() as conexao:
+                with conexao.cursor() as cursor:
+                    cursor.execute("SELECT id FROM livro WHERE id = %s", (livro_id,))
+                    if not cursor.fetchone():
+                        return resposta(404, {"erro": "Livro não encontrado."})
+            extensao = "png" if tipo == "image/png" else "jpg"
+            chave = f"capas/{livro_id}/{uuid.uuid4()}.{extensao}"
+            url = s3().generate_presigned_url(
+                "put_object",
+                Params={"Bucket": os.environ["CAPAS_BUCKET"], "Key": chave, "ContentType": tipo},
+                ExpiresIn=300,
+            )
+            return resposta(200, {"url": url, "chave": chave})
+    if len(partes) == 3 and partes[0] == "livros" and partes[2] == "capa" and metodo == "GET":
+        livro_id = inteiro_positivo(partes[1])
+        if livro_id is None:
+            return resposta(400, {"erro": "ID inválido."})
+        with conectar() as conexao:
+            with conexao.cursor() as cursor:
+                cursor.execute(
+                    "SELECT s3_chave, tamanho_bytes, tipo_conteudo FROM capa WHERE livro_id = %s",
+                    (livro_id,),
+                )
+                capa = cursor.fetchone()
+        if not capa:
+            return resposta(404, {"erro": "Capa não encontrada."})
+        capa["url"] = s3().generate_presigned_url(
+            "get_object",
+            Params={"Bucket": os.environ["CAPAS_BUCKET"], "Key": capa["s3_chave"]},
+            ExpiresIn=300,
+        )
+        return resposta(200, capa)
+    return None
 
 
 def lambda_handler(event, context):
+    if "Records" in event:
+        try:
+            return processar_capa(event)
+        except (pymysql.MySQLError, OSError, KeyError, ValueError):
+            print("Falha ao processar capa; verificar evento e configuração.")
+            raise
     direto = "requestContext" not in event
     if direto and event.get("action") != "init_db":
         return resposta(400, {"erro": "Evento de teste inválido."})
     if not direto:
         metodo = event.get("requestContext", {}).get("http", {}).get("method", "")
         partes = [parte for parte in (event.get("rawPath") or "").strip("/").split("/") if parte]
+        try:
+            resposta_extra = rota_aula4(event, partes, metodo)
+            if resposta_extra is not None:
+                return resposta_extra
+        except (pymysql.MySQLError, OSError, KeyError, ValueError):
+            print("Falha na rota da Aula 4; conferir CloudWatch.")
+            return resposta(500, {"erro": "Erro interno."})
         if len(partes) not in (1, 2) or partes[0] not in ("autores", "livros"):
             return resposta(404, {"erro": "Rota não encontrada."})
         entidade = partes[0]
