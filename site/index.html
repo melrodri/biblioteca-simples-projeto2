@@ -20,6 +20,15 @@
   .card p { margin:0; color:var(--muted); font-size:15px; }
   ul.team { list-style:none; padding:0; margin:0; display:flex; flex-wrap:wrap; gap:10px; }
   ul.team li { background:var(--card); border:1px solid var(--line); border-radius:8px; padding:8px 14px; }
+  section.app { background:var(--card); border:1px solid var(--line); border-radius:10px; padding:18px; margin:20px 0; }
+  form { display:flex; flex-wrap:wrap; gap:8px; }
+  input, select, button { font:inherit; padding:8px 10px; border:1px solid var(--line); border-radius:6px; }
+  button { background:var(--accent); color:white; cursor:pointer; }
+  button.small { font-size:13px; padding:4px 7px; margin:2px; }
+  table { border-collapse:collapse; width:100%; }
+  th, td { padding:8px; border-bottom:1px solid var(--line); text-align:left; }
+  .scroll { overflow-x:auto; }
+  img.capa { max-width:90px; max-height:100px; }
   footer { text-align:center; color:var(--muted); font-size:14px; padding:24px 16px 40px; }
 </style>
 </head>
@@ -27,10 +36,10 @@
 <header>
   <h1>Biblioteca Simples</h1>
   <p>Catálogo de autores e livros para pequenas bibliotecas, com capas e relatório de livros por autor.</p>
-  <span class="tag">Em desenvolvimento — Projeto 2</span>
+  <span class="tag">Projeto 2 — Serviços em Nuvem</span>
 </header>
 <main>
-  <h2>O que o sistema vai fazer</h2>
+  <h2>O que o sistema faz</h2>
   <div class="grid">
     <div class="card"><h3>Autores</h3><p>Cadastrar, consultar, editar e excluir autores.</p></div>
     <div class="card"><h3>Livros</h3><p>Cadastrar livros ligados a um autor, com título e ano.</p></div>
@@ -40,10 +49,35 @@
 
   <h2>Tecnologias</h2>
   <div class="grid">
-    <div class="card"><h3>Amazon S3</h3><p>Site e armazenamento das capas.</p></div>
+    <div class="card"><h3>EC2 e VPC</h3><p>Site em uma instância pequena na subnet pública.</p></div>
+    <div class="card"><h3>Amazon S3</h3><p>Armazenamento privado das capas.</p></div>
     <div class="card"><h3>API Gateway + Lambda</h3><p>API do cadastro e do relatório.</p></div>
     <div class="card"><h3>Amazon RDS</h3><p>Banco de dados MySQL em rede privada.</p></div>
   </div>
+
+  <p id="status" role="status"></p>
+  <section class="app">
+    <h2>Cadastrar autor</h2>
+    <form id="form-autor"><input id="nome" placeholder="Nome" maxlength="150" required><button>Cadastrar</button></form>
+    <div class="scroll"><table><thead><tr><th>Autor</th><th>Ações</th></tr></thead><tbody id="autores"></tbody></table></div>
+  </section>
+  <section class="app">
+    <h2>Cadastrar livro</h2>
+    <form id="form-livro">
+      <input id="titulo" placeholder="Título" maxlength="200" required>
+      <input id="ano" type="number" min="1" placeholder="Ano" required>
+      <select id="autor-id" required><option value="">Escolha o autor</option></select>
+      <button>Cadastrar</button>
+    </form>
+    <p>Capas aceitas: PNG ou JPEG de até 5 MB.</p>
+    <input id="arquivo" type="file" accept="image/png,image/jpeg" hidden>
+    <div class="scroll"><table><thead><tr><th>Livro</th><th>Ano</th><th>Autor</th><th>Capa</th><th>Ações</th></tr></thead><tbody id="livros"></tbody></table></div>
+  </section>
+  <section class="app">
+    <h2>Relatório de livros por autor</h2>
+    <button id="ver-relatorio">Atualizar relatório</button>
+    <div class="scroll"><table><thead><tr><th>Autor</th><th>Quantidade</th></tr></thead><tbody id="relatorio"></tbody></table></div>
+  </section>
 
   <h2>Equipe</h2>
   <ul class="team">
@@ -54,5 +88,6 @@
   </ul>
 </main>
 <footer>Serviços em Nuvem · Universidade Presbiteriana Mackenzie · 2026</footer>
+<script src="app.js"></script>
 </body>
 </html>
