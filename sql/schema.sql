@@ -17,3 +17,16 @@ CREATE TABLE IF NOT EXISTS livro (
     CONSTRAINT fk_livro_autor FOREIGN KEY (autor_id)
         REFERENCES autor(id) ON DELETE RESTRICT
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- A capa atual de cada livro. O evento do S3 preenche esta tabela.
+CREATE TABLE IF NOT EXISTS capa (
+    livro_id BIGINT UNSIGNED NOT NULL,
+    s3_chave VARCHAR(255) NOT NULL,
+    tamanho_bytes INT UNSIGNED NOT NULL,
+    tipo_conteudo VARCHAR(30) NOT NULL,
+    atualizado_em TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    PRIMARY KEY (livro_id),
+    UNIQUE KEY uq_capa_chave (s3_chave),
+    CONSTRAINT fk_capa_livro FOREIGN KEY (livro_id)
+        REFERENCES livro(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
