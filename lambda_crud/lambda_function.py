@@ -2,10 +2,8 @@
 
 import json
 import os
-import re
 import uuid
 from datetime import datetime, timezone
-from urllib.parse import unquote_plus
 
 import boto3
 import pymysql
@@ -101,43 +99,6 @@ def s3():
     return boto3.client("s3", region_name="us-east-1", config=Config(signature_version="s3v4"))
 
 
-def processar_capa(evento):
-    """Um upload em capas/ grava tamanho e tipo da imagem no RDS."""
-    bucket_esperado = os.environ["CAPAS_BUCKET"]
-    for registro in evento["Records"]:
-        bucket = registro["s3"]["bucket"]["name"]
-        chave = unquote_plus(registro["s3"]["object"]["key"])
-        if bucket != bucket_esperado:
-            continue
-        caminho = re.fullmatch(r"capas/([1-9][0-9]*)/[0-9a-f-]+\.(png|jpg)", chave)
-        if not caminho:
-            print("Arquivo ignorado fora do padrão de capas.")
-            continue
-        info = s3().head_object(Bucket=bucket, Key=chave)
-        tipo = info.get("ContentType")
-        tamanho = info.get("ContentLength", 0)
-        if tipo not in ("image/png", "image/jpeg") or not 0 < tamanho <= 5 * 1024 * 1024:
-            print("Capa ignorada: tipo ou tamanho inválido.")
-            continue
-        livro_id = int(caminho.group(1))
-        with conectar() as conexao:
-            with conexao.cursor() as cursor:
-                cursor.execute("SELECT id FROM livro WHERE id = %s", (livro_id,))
-                if not cursor.fetchone():
-                    print("Capa ignorada: livro não existe.")
-                    continue
-                cursor.execute(
-                    "INSERT INTO capa (livro_id, s3_chave, tamanho_bytes, tipo_conteudo) "
-                    "VALUES (%s, %s, %s, %s) ON DUPLICATE KEY UPDATE "
-                    "s3_chave = VALUES(s3_chave), tamanho_bytes = VALUES(tamanho_bytes), "
-                    "tipo_conteudo = VALUES(tipo_conteudo), atualizado_em = CURRENT_TIMESTAMP",
-                    (livro_id, chave, tamanho, tipo),
-                )
-                conexao.commit()
-        print(f"Capa processada: livro {livro_id}, {tamanho} bytes.")
-    return {"mensagem": "Evento S3 processado."}
-
-
 def rota_aula4(evento, partes, metodo):
     """Retorna uma resposta para as três rotas novas ou None para o CRUD."""
     if partes == ["relatorios", "livros-por-autor"] and metodo == "GET":
@@ -184,23 +145,19 @@ def rota_aula4(evento, partes, metodo):
                 )
                 capa = cursor.fetchone()
         if not capa:
+            print(f"Consulta de capa: livro {livro_id}, status 404.")
             return resposta(404, {"erro": "Capa não encontrada."})
         capa["url"] = s3().generate_presigned_url(
             "get_object",
             Params={"Bucket": os.environ["CAPAS_BUCKET"], "Key": capa["s3_chave"]},
             ExpiresIn=300,
         )
+        print(f"Consulta de capa: livro {livro_id}, status 200, {capa['tamanho_bytes']} bytes.")
         return resposta(200, capa)
     return None
 
 
 def lambda_handler(event, context):
-    if "Records" in event:
-        try:
-            return processar_capa(event)
-        except (pymysql.MySQLError, OSError, KeyError, ValueError):
-            print("Falha ao processar capa; verificar evento e configuração.")
-            raise
     direto = "requestContext" not in event
     if direto and event.get("action") != "init_db":
         return resposta(400, {"erro": "Evento de teste inválido."})
