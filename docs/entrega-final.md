@@ -13,4 +13,4 @@ Um upload real pela API, com URL pré-assinada, criou um PNG de 32.693 bytes no 
 
 ## Entrega
 
-O ZIP para o Moodle reúne código-fonte, SQL, README, especificações, registro de uso de IA com reflexão final e sete evidências em `docs/evidencias/`. Entre elas estão as capturas do objeto novo no S3 e do processamento automático no CloudWatch.
+O ZIP para o Moodle reúne código-fonte, SQL, README, especificações, registro de uso de IA com reflexão final e sete evidências em [`docs/evidencias/`](evidencias/README.md). Entre elas estão as capturas do objeto novo no S3 e do processamento automático no CloudWatch.

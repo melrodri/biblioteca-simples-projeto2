@@ -20,7 +20,7 @@ Região: `us-east-1`. Conta do laboratório: `245273424999`. Estes recursos pode
 | Lambda | `biblioteca-crud`, Python 3.12, `LabRole`, nas duas subnets privadas |
 | HTTP API | `ml1m8ddi5j`, [URL da API](https://ml1m8ddi5j.execute-api.us-east-1.amazonaws.com) |
 
-O RDS aceita TCP 3306 apenas do grupo da Lambda. A Lambda não recebe conexões de entrada e sua saída é restrita a TCP 3306 para o grupo do RDS. A senha foi gerada no CloudShell e guardada fora do repositório. Não publique `DB_PASSWORD` nem capturas das variáveis de ambiente.
+O RDS aceita TCP 3306 apenas do grupo da Lambda. Nesta etapa, a Lambda não recebe conexões de entrada e usa a saída TCP 3306 para o grupo do RDS. Para montar a configuração final de capas, acrescente a regra HTTPS descrita na [Parte 4](parte4.md#rede-da-configuração-final). A senha foi gerada no CloudShell e guardada fora do repositório. Não publique `DB_PASSWORD` nem capturas das variáveis de ambiente.
 
 ## Verificação feita na AWS
 
@@ -29,9 +29,9 @@ O RDS aceita TCP 3306 apenas do grupo da Lambda. A Lambda não recebe conexões 
 - Nome vazio e ano futuro: 400; autor inexistente no cadastro de livro: 400; livro inexistente: 404; exclusão de autor com livro: 409.
 - CORS: `OPTIONS /autores` respondeu 204 e liberou a origem HTTP do site S3.
 - Exemplo deixado no banco: autor `Machado de Assis` (ID 1) e livro `Dom Casmurro` (ID 1). Os registros temporários usados para testar exclusão foram removidos.
-- O roteiro `docs/teste-aula3.ps1` foi executado novamente em 22/10/2026: consultou 1 autor e 1 livro, criou e editou registros temporários, recebeu 409 no bloqueio e apagou os temporários. O exemplo principal continuou no banco.
+- O roteiro `docs/teste-aula3.ps1` foi executado novamente: consultou 1 autor e 1 livro, criou e editou registros temporários, recebeu 409 no bloqueio e apagou os temporários. O exemplo principal continuou no banco.
 
-Esses resultados pertencem à sessão do Learner Lab em 22/10/2026. Confira a API novamente antes da demonstração: [autores](https://ml1m8ddi5j.execute-api.us-east-1.amazonaws.com/autores) e [livros](https://ml1m8ddi5j.execute-api.us-east-1.amazonaws.com/livros).
+Esses resultados pertencem à sessão do Learner Lab usada nos testes. Confira a API novamente antes da demonstração: [autores](https://ml1m8ddi5j.execute-api.us-east-1.amazonaws.com/autores) e [livros](https://ml1m8ddi5j.execute-api.us-east-1.amazonaws.com/livros).
 
 ## Arquivos para acrescentar ao repositório
 
@@ -94,4 +94,4 @@ Ao iniciar nova sessão, confira se o RDS está disponível e se a Lambda, API e
 
 ## Próxima etapa
 
-Upload de capas (RF-02), evento S3 → Lambda → RDS (RF-03), relatório (RF-04) e front-end consumindo a API (RF-05) pertencem à Aula 4. Eles continuam como planejados no design, sem afirmação de implementação nesta entrega.
+Upload de capas (RF-02), evento S3 → Lambda → RDS (RF-03), relatório (RF-04) e front-end consumindo a API (RF-05) pertencem à Aula 4. O roteiro da configuração final está na [Parte 4](parte4.md).

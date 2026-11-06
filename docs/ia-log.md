@@ -31,7 +31,6 @@ O domínio, as entidades, a simplificação de um autor por livro e as funcional
 
 ## Entrada 02 — Revisão da especificação com GitHub Copilot
 
-**Data:** 15/10/2026
 **Ferramenta:** GitHub Copilot Chat (github.com/copilot), modo Ask, modelo Auto.
 
 O envio ao repositório, a execução desta revisão no Copilot e a redação desta entrada foram feitos com ajuda do Claude (assistente da Anthropic), que também removeu do README um link para um arquivo não incluído.
@@ -76,7 +75,6 @@ As propostas da Entrada 01 (ano entre 1 e o ano corrente, capas PNG/JPEG de até
 
 ## Entrada 03 — Design da Aula 2
 
-**Data:** 15/10/2026
 **Ferramenta:** Claude (assistente da Anthropic).
 
 ### Pedido
@@ -104,7 +102,6 @@ Gerar o `specs/design.md` a partir do `specs/spec.md` e do enunciado: diagrama d
 
 ## Entrada 04 — Revisão do design com GitHub Copilot
 
-**Data:** 15/10/2026
 **Ferramenta:** GitHub Copilot Chat (github.com/copilot), modo Ask, modelo Auto, com o repositório anexado como contexto. O Copilot abriu `specs/design.md` e `specs/spec.md`.
 
 ### Prompt utilizado
@@ -130,7 +127,6 @@ Gerar o `specs/design.md` a partir do `specs/spec.md` e do enunciado: diagrama d
 
 ## Entrada 05 — Personas da especificação com GitHub Copilot
 
-**Data:** 15/10/2026
 **Ferramenta:** GitHub Copilot Chat (github.com/copilot), modo Ask, modelo Auto, com o repositório anexado como contexto.
 
 ### Prompt utilizado
@@ -150,3 +146,27 @@ Três personas: Ana Souza (bibliotecária chefe), João Pereira (assistente de a
 | Ligação das personas às histórias | Corrigida | O Copilot trocou as histórias (por exemplo, citou a HU-03 como envio de capa e a HU-05 como consulta). Ajustamos conforme o spec. |
 | Preenchimento manual dos metadados da capa | Rejeitada | Os metadados são registrados automaticamente pela Lambda (HU-05). |
 | Busca de títulos, impressão e controle de duplicatas | Rejeitada | Fora do escopo; nomes e títulos repetidos são permitidos e diferenciados pelo ID. |
+
+## Entrada 06 — Revisão de capas e das funções AWS
+
+**Ferramenta** — ChatGPT, com apoio na revisão do código, na inspeção da AWS e na organização da entrega final.
+
+Durante a apresentação, ao clicar em **Ver capa**, a imagem não ficava visível. Na investigação encontramos uma capa de Dom Casmurro com apenas um pixel. Enviamos uma imagem com dimensões visíveis e conferimos a exibição no navegador. Também seguimos a sugestão do professor de separar os gatilhos. Mantivemos a função do API Gateway para o CRUD, o relatório e as URLs das capas. Criamos a função de processamento para receber eventos do S3, aproveitando as sub-redes privadas já existentes.
+
+A configuração da notificação foi conferida no bucket. Depois da troca, usamos um evento de teste com a chave de um objeto real para validar a nova função. O CloudWatch registrou o processamento e a função da API registrou a consulta da capa com status 200. O [índice de evidências](evidencias/README.md) descreve essas verificações.
+
+Na verificação final com ChatGPT, enviamos um PNG para um livro de teste usando a API e a URL pré-assinada. O S3 acionou a função automaticamente, o CloudWatch registrou o processamento e a API devolveu a imagem processada. O roteiro também descreve como repetir o teste pela interface do site.
+
+## Ferramentas registradas por etapa
+
+| Etapa | Uso registrado |
+| --- | --- |
+| Especificação e design | GitHub Copilot Chat na revisão dos requisitos, das personas e da arquitetura. |
+| Implementação e verificação | Codex nas atividades das Aulas 3 e 4 e ChatGPT na revisão final do fluxo de capas. |
+| Documentação | Registros das revisões com Copilot e dos ajustes posteriores com Codex e ChatGPT, conforme as entradas deste log. |
+
+## Reflexão final
+
+A IA nos ajudou a transformar requisitos em histórias de usuário, organizar a arquitetura e investigar problemas no código. As primeiras sugestões precisaram de revisão. Na especificação, ajustamos a ligação entre as personas e as histórias. No design, corrigimos a representação do endpoint S3 para mostrar que o acesso passa pela tabela de rotas da VPC.
+
+O diagnóstico da capa mostrou a importância de conferir várias etapas. A API podia devolver status 200 enquanto a imagem de um pixel continuava praticamente invisível. Conferir o tamanho do objeto, ler os logs e abrir a imagem no navegador ajudou a separar o que cada teste comprovava. A divisão das funções também deixou mais claro onde procurar os registros de cada etapa. Em trabalhos futuros, registraríamos desde o primeiro teste qual ação foi executada, em qual ambiente e qual resultado foi observado.
