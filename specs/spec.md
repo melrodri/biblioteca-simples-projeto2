@@ -122,15 +122,15 @@ Como funcionário, quero consultar a quantidade de livros por autor para conhece
 - Se não houver autores, a resposta contém uma lista vazia, sem inventar registros.
 - A implementação prevista usa consulta com JOIN (junção de dados de tabelas relacionadas) e GROUP BY (agrupamento para calcular contagens), executada em Lambda e exposta pelo API Gateway. Será necessário preservar autores sem livros na junção e contar IDs de livros, não linhas vazias.
 
-## Aplicação futura dos requisitos funcionais
+## Requisitos funcionais e estado da implementação
 
 | Requisito | Aplicação na biblioteca | Histórias | Estado |
 | --- | --- | --- | --- |
-| RF-01 | CRUD completo (criar, consultar, atualizar e excluir) de autores e livros, relacionados e persistidos no Amazon RDS, serviço gerenciado de banco de dados relacional. | HU-01, HU-02, HU-03 | Planejado |
-| RF-02 | Envio direto da capa ao S3, serviço de armazenamento de objetos, por URL pré-assinada gerada pelo backend. | HU-04 | Planejado |
-| RF-03 | Evento de criação no S3 dispara Lambda para gravar chave, tamanho e tipo de conteúdo da capa no RDS. | HU-05 | Planejado |
-| RF-04 | Relatório de livros por autor com JOIN e GROUP BY, incluindo quantidade zero, em Lambda e exposto pelo API Gateway, serviço que recebe e encaminha chamadas de API. | HU-06 | Planejado |
-| RF-05 | Front-end web publicado na AWS e consumindo a API (interface de comunicação entre a página e os serviços). O funcionário usará a página para executar as funcionalidades. | HU-01 a HU-06 | Planejado |
+| RF-01 | CRUD completo (criar, consultar, atualizar e excluir) de autores e livros, relacionados e persistidos no Amazon RDS, serviço gerenciado de banco de dados relacional. | HU-01, HU-02, HU-03 | Implementado |
+| RF-02 | Envio direto da capa ao S3, serviço de armazenamento de objetos, por URL pré-assinada gerada pelo backend. | HU-04 | Implementado |
+| RF-03 | Evento de criação no S3 dispara Lambda para gravar chave, tamanho e tipo de conteúdo da capa no RDS. | HU-05 | Implementado. Disparo automático validado com upload real pela API. |
+| RF-04 | Relatório de livros por autor com JOIN e GROUP BY, incluindo quantidade zero, em Lambda e exposto pelo API Gateway, serviço que recebe e encaminha chamadas de API. | HU-06 | Implementado |
+| RF-05 | Front-end web publicado na AWS e consumindo a API (interface de comunicação entre a página e os serviços). O funcionário usará a página para executar as funcionalidades. | HU-01 a HU-06 | Implementado |
 
 ## Restrições para as próximas etapas
 

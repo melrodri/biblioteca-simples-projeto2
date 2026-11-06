@@ -3,17 +3,34 @@
 Este documento descreve como o sistema será construído na AWS (Learner Lab): arquitetura, modelo de dados, rotas da API, regras de rede e decisões de arquitetura (ADRs). Ele parte da especificação em [`specs/spec.md`](spec.md).
 
 ## 1. Diagrama de arquitetura
-Arquitetura implantada na Aula 4:
+Arquitetura da entrega final.
 
-```text
-Navegador → EC2 (nginx, HTML/JS) → API Gateway → Lambda biblioteca-crud → RDS MySQL
-                         │                                 │
-                         └── URL pré-assinada → S3 capas ──┘
-                                                  evento de upload
+```mermaid
+flowchart TB
+    Navegador["Navegador"]
+    subgraph VPC
+        subgraph Publica["Sub-rede pública"]
+            EC2["EC2 com nginx"]
+        end
+        subgraph Privadas["Sub-redes privadas"]
+            CRUD["Lambda biblioteca-crud"]
+            Capas["Lambda biblioteca-processar-capa"]
+            RDS["RDS MySQL"]
+        end
+    end
+    API["API Gateway"]
+    S3["Bucket S3 privado"]
+    Navegador -->|Carrega o site| EC2
+    Navegador -->|Chama a API| API
+    API --> CRUD
+    CRUD -->|CRUD e relatório| RDS
+    Navegador -->|URL pré-assinada| S3
+    S3 -->|ObjectCreated| Capas
+    Capas -->|Registra metadados| RDS
+    Capas -.->|Consulta objeto pelo endpoint da VPC| S3
 ```
 
-A EC2 está na subnet pública da VPC. A Lambda e o RDS estão nas subnets privadas; a Lambda acessa o S3 por um VPC Gateway Endpoint. A imagem abaixo é o desenho inicial da Aula 2, antes da decisão de publicar o site na EC2.
-<img width="1600" height="783" alt="WhatsApp Image 2026-10-16 at 09 34 34" src="https://github.com/user-attachments/assets/2aedd9a0-aa17-443b-b259-c11b85c6cde8" />
+As duas funções registram suas execuções no CloudWatch. A Lambda da API gera as URLs pré-assinadas de envio e leitura.
 
 ### Componentes
 
@@ -21,14 +38,13 @@ A EC2 está na subnet pública da VPC. A Lambda e o RDS estão nas subnets priva
 | --- | --- | --- |
 | EC2 (nginx) | Hospeda o front-end simples (HTML, CSS e JavaScript) na subnet pública. | RF-05 |
 | API Gateway (HTTP API) | Recebe as chamadas do front-end e encaminha para a Lambda correta. CORS configurado para a origem do site. | RF-01, RF-02, RF-04 |
-| Lambda `crud` | Cadastro, consulta, edição e exclusão de autores e livros. | RF-01 |
-| Lambda `biblioteca-crud` | Além do CRUD, confere o livro e gera a URL pré-assinada para envio da capa. | RF-02 |
+| Lambda `biblioteca-crud` | Executa o CRUD e o relatório, e gera URLs pré-assinadas de envio e leitura das capas. | RF-01, RF-02, RF-04 |
 | S3 (bucket de capas) | Guarda as imagens das capas. Privado; o acesso é feito só por URLs pré-assinadas. CORS liberado para o site. | RF-02 |
-| Lambda `biblioteca-crud` | Também recebe o evento do S3, registra a capa no RDS e executa o relatório com JOIN e GROUP BY. Uma função mantém o projeto pequeno. | RF-03, RF-04 |
+| Lambda `biblioteca-processar-capa` | Recebe o evento do S3, valida o objeto e registra os metadados no RDS. | RF-03 |
 | Amazon RDS (MySQL, db.t3.micro) | Banco relacional com autores, livros e capas. Em subnet privada, sem acesso público. | RF-01, RNF-01 |
-| VPC Gateway Endpoint (S3) | Rota associada às tabelas de rota das subnets privadas. Permite que a Lambda `processa-capa`, dentro da VPC, acesse o S3 sem internet e sem NAT Gateway. Não é um servidor nem aparece em regras de Security Group. | Learner Lab |
+| VPC Gateway Endpoint (S3) | Rota associada às tabelas de rota das subnets privadas. Permite que a Lambda `biblioteca-processar-capa`, dentro da VPC, acesse o S3 sem internet e sem NAT Gateway. Não é um servidor nem aparece em regras de Security Group. | Learner Lab |
 
-A Lambda usa a **LabRole**. Nenhuma role IAM é criada.
+As duas Lambdas usam a **LabRole**. Nenhuma role IAM é criada.
 
 ### Fluxo de envio da capa
 
@@ -36,13 +52,13 @@ A Lambda usa a **LabRole**. Nenhuma role IAM é criada.
 2. O site chama `POST /livros/{id}/capa/url-upload` informando o tipo do arquivo.
 3. A Lambda `biblioteca-crud` confere se o livro existe e se o tipo é PNG ou JPEG, e devolve uma URL pré-assinada válida por 5 minutos, com a chave `capas/{livro_id}/{uuid}.{extensao}`.
 4. O navegador envia a imagem direto ao bucket de capas usando essa URL.
-5. O S3 dispara a mesma Lambda `biblioteca-crud`, que tira o `livro_id` da chave e faz um `HeadObject` no S3 para obter tamanho e tipo reais do arquivo. Se o arquivo for válido (PNG/JPEG até 5 MB), grava os dados na tabela `capa`; caso contrário, registra o erro no CloudWatch e não associa a capa.
+5. O S3 dispara a Lambda `biblioteca-processar-capa`, que tira o `livro_id` da chave e faz um `HeadObject` no S3 para obter tamanho e tipo reais do arquivo. Se o arquivo for válido (PNG/JPEG até 5 MB), grava os dados na tabela `capa`; caso contrário, registra o erro no CloudWatch e não associa a capa.
 
 A imagem anterior de um livro continua no bucket, mas deixa de ser a capa atual. A remoção de arquivos antigos é feita manualmente, se necessário.
 
 ## 2. Modelo de dados (ER)
 
-<img width="605" height="1600" alt="WhatsApp Image 2026-10-16 at 09 34 34 (1)" src="https://github.com/user-attachments/assets/f774b3ef-a2d3-45b0-8fa5-1524a965f60d" />
+<img width="605" height="1600" alt="Modelo de dados da biblioteca" src="https://github.com/user-attachments/assets/f774b3ef-a2d3-45b0-8fa5-1524a965f60d" />
 
 | Tabela | Campos | Regras |
 | --- | --- | --- |
@@ -58,18 +74,18 @@ Base: endereço do API Gateway. Corpo e respostas em JSON.
 
 | Método | Rota | O que faz | Lambda |
 | --- | --- | --- | --- |
-| GET | `/autores` | Lista os autores | `crud` |
-| GET | `/autores/{id}` | Consulta um autor | `crud` |
-| POST | `/autores` | Cadastra um autor | `crud` |
-| PUT | `/autores/{id}` | Edita o nome do autor | `crud` |
-| DELETE | `/autores/{id}` | Exclui o autor (só se não tiver livros) | `crud` |
-| GET | `/livros` | Lista os livros com o nome do autor | `crud` |
-| GET | `/livros/{id}` | Consulta um livro | `crud` |
-| POST | `/livros` | Cadastra um livro | `crud` |
-| PUT | `/livros/{id}` | Edita título, ano e autor | `crud` |
-| DELETE | `/livros/{id}` | Exclui o livro | `crud` |
+| GET | `/autores` | Lista os autores | `biblioteca-crud` |
+| GET | `/autores/{id}` | Consulta um autor | `biblioteca-crud` |
+| POST | `/autores` | Cadastra um autor | `biblioteca-crud` |
+| PUT | `/autores/{id}` | Edita o nome do autor | `biblioteca-crud` |
+| DELETE | `/autores/{id}` | Exclui o autor (só se não tiver livros) | `biblioteca-crud` |
+| GET | `/livros` | Lista os livros com o nome do autor | `biblioteca-crud` |
+| GET | `/livros/{id}` | Consulta um livro | `biblioteca-crud` |
+| POST | `/livros` | Cadastra um livro | `biblioteca-crud` |
+| PUT | `/livros/{id}` | Edita título, ano e autor | `biblioteca-crud` |
+| DELETE | `/livros/{id}` | Exclui o livro | `biblioteca-crud` |
 | POST | `/livros/{id}/capa/url-upload` | Gera a URL pré-assinada para enviar a capa | `biblioteca-crud` |
-| GET | `/livros/{id}/capa` | Retorna os metadados da capa e uma URL pré-assinada de leitura (GET), válida por 5 minutos, para exibi-la | `crud` |
+| GET | `/livros/{id}/capa` | Retorna os metadados da capa e uma URL pré-assinada de leitura (GET), válida por 5 minutos, para exibi-la | `biblioteca-crud` |
 | GET | `/relatorios/livros-por-autor` | Quantidade de livros por autor | `biblioteca-crud` |
 
 ### Respostas de erro
@@ -143,7 +159,7 @@ O acesso ao S3 a partir da VPC passa pelo Gateway Endpoint por meio da tabela de
 - O nome do bucket de capas também fica em variável de ambiente.
 - Nenhuma senha ou chave é salva no repositório (RNF-02).
 - O endereço da API usado pelo front-end fica no início de `site/app.js`, atualizado se a API for recriada.
-- O passo a passo para recriar os recursos numa nova sessão do Learner Lab ficará no README (RNF-03, RNF-05).
+- O passo a passo para recriar os recursos numa nova sessão do Learner Lab está nas instruções vinculadas no README (RNF-03, RNF-05).
 
 ## 6. ADRs
 
@@ -177,3 +193,7 @@ O acesso ao S3 a partir da VPC passa pelo Gateway Endpoint por meio da tabela de
 **Decisão.** Publicar o front-end simples (HTML, CSS e JavaScript) com nginx numa EC2, conforme pedido do professor. O bucket S3 continua reservado às capas privadas.
 
 **Consequências.** A turma pode mostrar a EC2 e a VPC no console. O site chama a API Gateway e o navegador envia a capa diretamente ao S3; por isso a origem HTTP da EC2 precisa estar no CORS de ambos. Ao reiniciar a EC2, o IP público pode mudar e essas origens devem ser atualizadas. O site usa HTTP, adequado apenas à demonstração no Learner Lab.
+
+### ADR-003 — Processamento de capas em função separada
+
+O API Gateway continua integrado à `biblioteca-crud`. O evento de criação de objeto do S3, filtrado pelo prefixo `capas/`, invoca `biblioteca-processar-capa`. As duas funções compartilham as sub-redes privadas, a configuração de acesso ao banco e os utilitários Python. Os handlers e grupos de logs são separados para identificar cada fluxo durante o diagnóstico.
