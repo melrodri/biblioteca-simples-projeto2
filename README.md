@@ -1,66 +1,42 @@
-# Biblioteca — Projeto 2
+# Biblioteca Simples — Projeto 2
 
-Disciplina: Serviços em Nuvem. Professor: Joaquim Pessoa.
+Serviços em Nuvem · Universidade Presbiteriana Mackenzie · Professor Joaquim Pessoa
 
-## Integrantes
+**Equipe** — Matheus Henrique, Luís Otávio, Matheus Romano e Melissa Bezerra.
 
-- Matheus Henrique
-- Luís Otávio
-- Matheus Romano
-- Melissa Bezerra
+**Repositório** — [melrodri/biblioteca-simples-projeto2](https://github.com/melrodri/biblioteca-simples-projeto2)
 
-## Sobre o projeto
+## O que o sistema faz
 
-Sistema web usado por um funcionário para cadastrar autores e livros, com envio de capas e relatório de livros por autor, publicado na AWS (Learner Lab).
+A biblioteca mantém um catálogo de autores e livros. Pelo navegador, é possível cadastrar, consultar, editar e excluir registros, enviar e visualizar capas e atualizar o relatório de livros por autor.
 
-## Entregas
+| Requisito | Implementação |
+| --- | --- |
+| RF-01 · CRUD | O site chama a HTTP API. A função `biblioteca-crud` executa as operações no MySQL. |
+| RF-02 · Upload | A API gera uma URL pré-assinada de cinco minutos. O navegador envia PNG ou JPEG de até 5 MB ao bucket privado de capas. |
+| RF-03 · Processamento | O evento de criação de objeto do S3 chama `biblioteca-processar-capa`. A função valida os dados do objeto, grava os metadados no RDS e registra o resultado no CloudWatch. |
+| RF-04 · Relatório | A função da API consulta o RDS com `LEFT JOIN`, `GROUP BY` e `COUNT(l.id)`. Autores sem livros aparecem com total zero. |
+| RF-05 · Front-end | O nginx na EC2 publica os arquivos do site. A instância está na sub-rede pública e as duas Lambdas e o RDS usam as sub-redes privadas. |
 
-### Aula 1 — Especificação
+## Como abrir e testar
 
-- Grupo formado e domínio escolhido: biblioteca simples.
-- [Especificação](specs/spec.md) com problema, duas personas, seis histórias de usuário com critérios de aceite e aplicação dos RF-01 a RF-05.
-- Revisão da especificação com GitHub Copilot, registrada no [registro de IA](docs/ia-log.md).
+1. Inicie o Learner Lab na região `us-east-1`. No console, confira a instância `Biblioteca-Simples-Web` em execução e o RDS `biblioteca-simples-db` disponível.
+2. Na EC2, copie o **Endereço IPv4 público** e abra `http://IP_DA_EC2/`. O endereço público pode mudar após uma parada e nova inicialização da instância. Se mudar, permita a nova origem HTTP no CORS do API Gateway e do bucket S3.
+3. Para testar o CRUD, cadastre um autor e um livro de teste, confira as tabelas e edite um campo. Exclua o livro antes do autor ao terminar.
+4. Para testar capas, envie um PNG ou JPEG visível de até 5 MB. Aguarde alguns segundos e clique em **Ver capa**. Abra o CloudWatch para conferir o grupo `/aws/lambda/biblioteca-processar-capa`.
+5. Clique em **Atualizar relatório** e confira a quantidade de livros de cada autor. O [endpoint do relatório](https://ml1m8ddi5j.execute-api.us-east-1.amazonaws.com/relatorios/livros-por-autor) devolve o mesmo resultado em JSON.
 
-### Aula 2 — Design
+Para recriar os recursos, siga a [configuração do CRUD e do banco](docs/parte3.md) e depois a [implantação do site e das duas funções](docs/parte4.md). O [esquema SQL](sql/schema.sql) cria as tabelas `autor`, `livro` e `capa`. Configure as variáveis do banco nas funções. A URL da API usada pelo site fica no início de `site/app.js`.
 
-- [Design](specs/design.md) com diagrama de arquitetura, modelo ER, rotas da API, Security Groups e ADRs.
-- ADR-001: CRUD em Lambda (RNF-04).
-- Revisão do design com GitHub Copilot, registrada no [registro de IA](docs/ia-log.md).
-- Landing page publicada em bucket S3.
-- O front-end da Aula 2 está em `site/index.html`; por enquanto é uma página de apresentação.
+## Arquivos da entrega
 
-### Aula 3 — CRUD e banco privado
+| Caminho | Conteúdo |
+| --- | --- |
+| [site/](site/) | HTML e JavaScript da aplicação web |
+| [lambda_crud/](lambda_crud/) | Código dos dois handlers Python e dependência PyMySQL |
+| [sql/schema.sql](sql/schema.sql) | Esquema MySQL |
+| [specs/](specs/) | [Especificação](specs/spec.md), [design](specs/design.md) e [tarefas](specs/tasks.md) |
+| [docs/ia-log.md](docs/ia-log.md) | Histórico de uso de IA e reflexão final |
+| [docs/evidencias/](docs/evidencias/README.md) | Capturas da aplicação, do CloudWatch, da VPC, do RDS e do S3 |
 
-- [Schema MySQL](sql/schema.sql) de autores e livros relacionados (RF-01).
-- [Código da Lambda CRUD](lambda_crud/lambda_function.py), com dependência em [requirements.txt](lambda_crud/requirements.txt).
-- [Tarefas e estado real](specs/tasks.md).
-- [Passo a passo da AWS e demonstração](docs/parte3.md).
-- [Teste para a apresentação](docs/teste-aula3.ps1).
-
-**Estado em 22/10/2026:** CRUD funcionando no Learner Lab, região `us-east-1`. RDS privado, Lambda e dez rotas da HTTP API foram criados e testados. O site da Aula 2 ainda não consome a API; essa ligação faz parte da Aula 4.
-
-### Aula 4 — capas, relatório e site na EC2
-
-- O [site da biblioteca](http://3.90.6.87/) agora consome a API para o CRUD de autores e livros, envio de capa e relatório.
-- A EC2 publica o HTML e JavaScript. A Lambda permanece na VPC com acesso ao RDS privado; as capas ficam em S3 privado.
-- O envio da capa usa URL pré-assinada e evento S3 → Lambda → RDS. O relatório conta livros por autor com `LEFT JOIN` e `GROUP BY`.
-- [Passo a passo da apresentação, recursos AWS e retomada](docs/parte4.md). O IP da EC2 pode mudar depois que o Learner Lab for reiniciado.
-
-**Verificado em 28/10/2026:** site HTTP 200, relatório pela API, upload de capa no S3, metadados no RDS e registro no CloudWatch.
-
-**API:** [https://ml1m8ddi5j.execute-api.us-east-1.amazonaws.com](https://ml1m8ddi5j.execute-api.us-east-1.amazonaws.com). Exemplos: [autores](https://ml1m8ddi5j.execute-api.us-east-1.amazonaws.com/autores) e [livros](https://ml1m8ddi5j.execute-api.us-east-1.amazonaws.com/livros). Recursos do Learner Lab podem ser apagados entre sessões; confira a URL antes de apresentar.
-
-## Página do projeto
-
-[Protótipo no S3](http://biblioteca-simples-site.s3-website-us-east-1.amazonaws.com/)
-
-[Site atual da Aula 4 na EC2](http://3.90.6.87/)
-
-## Documentos
-
-- [Especificação](specs/spec.md)
-- [Design](specs/design.md)
-- [Registro de uso de IA](docs/ia-log.md)
-- [Registro da Aula 3](docs/ia-log-aula3.md)
-- [Implantação da Aula 3](docs/parte3.md)
-- [Implantação e demonstração da Aula 4](docs/parte4.md)
+A [nota da entrega final](docs/entrega-final.md) registra as mudanças de arquitetura e o teste de disparo automático do S3.
